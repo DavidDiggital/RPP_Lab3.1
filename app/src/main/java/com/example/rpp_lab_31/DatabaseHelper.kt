@@ -2,6 +2,7 @@ package com.example.rpp_lab_31
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import java.util.*
@@ -14,24 +15,44 @@ class DatabaseHelper(context: Context?) :
         null,
         SCHEMA
     ) {
+
+    companion object {
+        private const val DATABASE_NAME = "students.db"
+        const val TABLE_NAME = "student"
+        private const val SCHEMA = 1
+        const val COLUMN_ID = "_id"
+        const val COLUMN_FULL_NAME = "name"
+        const val COLUMN_TIME_TO_ADD = "time"
+    }
+
     private var studentsList: ArrayList<String>? = null
+
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
             "CREATE TABLE IF NOT EXISTS " + TABLE_NAME +
                     " ( " +
                     COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     COLUMN_FULL_NAME + " TEXT, " +
-                    COLUMN_TIME_TO_ADD + " DATETIME DEFAULT CURRENT_TIME" +
+                    COLUMN_TIME_TO_ADD + " DATETIME" +
                     ");"
         )
         insertData(db)
     }
 
     fun insertData(db: SQLiteDatabase) {
+        fillArrayList()
         val random = Random()
         val randomNumbers = ArrayList<Int>()
         var pos: Int
+        var sz: Int
+        val cursor = db.rawQuery(
+            "SELECT $COLUMN_FULL_NAME FROM $TABLE_NAME;",
+            null
+        )
+        cursor.moveToFirst()
+
         while (randomNumbers.size != 5) {
+            sz = studentsList!!.size
             pos = random.nextInt(studentsList!!.size)
             if (randomNumbers.indexOf(pos) == -1) {
                 randomNumbers.add(pos)
@@ -46,6 +67,7 @@ class DatabaseHelper(context: Context?) :
     }
 
     fun getName(db: SQLiteDatabase): String {
+        val rand = Random()
         val cursor = db.rawQuery(
             "SELECT $COLUMN_FULL_NAME FROM $TABLE_NAME;",
             null
@@ -63,7 +85,7 @@ class DatabaseHelper(context: Context?) :
                 return name
             }
         }
-        return studentsList!![0]
+        return studentsList!![rand.nextInt(studentsList!!.size)]
     }
 
     override fun onUpgrade(
@@ -73,10 +95,6 @@ class DatabaseHelper(context: Context?) :
     ) {
         db.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
         onCreate(db)
-    }
-
-    fun deleteStudent(db: SQLiteDatabase, studentId: String) {
-        db.delete(TABLE_NAME, "_id ?", arrayOf(studentId))
     }
 
     private fun fillArrayList() {
@@ -109,18 +127,5 @@ class DatabaseHelper(context: Context?) :
         studentsList!!.add("Чехуров Денис Александрович")
         studentsList!!.add("Эльшейх Самья Ахмед")
         studentsList!!.add("Юров Илья Игоревич")
-    }
-
-    companion object {
-        private const val DATABASE_NAME = "students.db"
-        const val TABLE_NAME = "student"
-        private const val SCHEMA = 1
-        const val COLUMN_ID = "_id"
-        const val COLUMN_FULL_NAME = "name"
-        const val COLUMN_TIME_TO_ADD = "time"
-    }
-
-    init {
-        fillArrayList()
     }
 }
